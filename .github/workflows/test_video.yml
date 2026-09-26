@@ -1,7 +1,7 @@
 name: Ilk Video Uretim Testi
 
 on:
-  workflow_dispatch: # Bu satır, GitHub sitesinden "Çalıştır" butonuna elle basmamızı sağlar.
+  workflow_dispatch:
 
 jobs:
   test-render:
@@ -16,11 +16,11 @@ jobs:
       with:
         python-version: '3.10'
 
-    # MoviePy'ın Linux sunucusunda yazı yazabilmesi için 'imagemagick' kurulmalıdır.
-    - name: ImageMagick Kur (Yazı Ekleme İçin Şart)
+    - name: Linux Sistem Paketlerini ve Fontları Kur
       run: |
         sudo apt-get update
-        sudo apt-get install -y imagemagick
+        sudo apt-get install -y imagemagick fontconfig fonts-dejavu-core
+        # ImageMagick güvenlik politikasını düzenle
         sudo sed -i 's/<policy domain="path" rights="none" pattern="@\*"/<policy domain="path" rights="read|write" pattern="@\*"/g' /etc/ImageMagick-6/policy.xml
 
     - name: Bağımlılıkları Yükle
@@ -30,7 +30,6 @@ jobs:
     - name: Kodu Çalıştır ve Videoyu Üret
       run: python main.py
 
-    # Üretilen videoyu GitHub arayüzünden bilgisayarımıza indirebilmemiz için saklar
     - name: Videoyu GitHub'a Yukle (Artifact)
       uses: actions/upload-artifact@v4
       with:
