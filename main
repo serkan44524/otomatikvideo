@@ -1,59 +1,30 @@
 import os
-import cv2
-import numpy as np
+import requests
 
-def video_olustur():
-    print("1. Saf Python ile dikey video olusturma basliyor...")
+def video_indir_ve_kaydet():
+    print("1. Test videosu internetten indiriliyor...")
+    # Dogrudan calisan acik kaynakli dikey test videosu linki
+    video_url = "https://mixkit.co"
     
-    # Video boyutları (TikTok uyumlu 9:16 dikey format)
-    width = 720
-    height = 1280
-    fps = 24
-    sure_saniye = 5
-    toplam_kare = fps * sure_saniye
-        
-    # Sunucuda en garanti calisan XVID codec bileşeni
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter('cikti_video.mp4', fourcc, fps, (width, height))
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
     
-    # Ekrana yazilacak satirlar
-    satirlar = [
-        "GITHUB ACTIONS",
-        "OTOMASYON TESTI",
-        "YUZDE YUZ BASARILI"
-    ]
-
-    for kare_no in range(toplam_kare):
-        # Arka plan için boş bir matris oluştur (Koyu Lacivert/Mavi renk: R=20, G=30, B=50)
-        frame = np.zeros((height, width, 3), dtype=np.uint8)
-        frame[:] = [50, 30, 20] # OpenCV BGR formatı kullanır
-        
-        # Her karenin uzerine satirlari yaz
-        for i, metin in enumerate(satirlar):
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_olcegi = 1.5
-            kalinlik = 3
-            
-            # Metin boyutunu hesapla
-            (metin_w, metin_h), _ = cv2.getTextSize(metin, font, font_olcegi, kalinlik)
-            
-            # Ekranın ortasına hizala
-            x = int((width - metin_w) / 2)
-            y = int((height / 2) - (len(satirlar) * 60 / 2) + (i * 70))
-            
-            # Gölge efekti (Siyah)
-            cv2.putText(frame, metin, (x+2, y+2), font, font_olcegi, (0, 0, 0), kalinlik+1, cv2.LINE_AA)
-            # Ana yazı (Beyaz)
-            cv2.putText(frame, metin, (x, y), font, font_olcegi, (255, 255, 255), kalinlik, cv2.LINE_AA)
-            
-        out.write(frame)
-
-    out.release()
-    print("Video basariyla olusturuldu: cikti_video.mp4")
+    response = requests.get(video_url, headers=headers, stream=True)
+    
+    if response.status_code == 200:
+        with open("cikti_video.mp4", "wb") as f:
+            for chunk in response.iter_content(chunk_size=1024 * 1024):
+                if chunk:
+                    f.write(chunk)
+        print("Video basariyla indirildi ve 'cikti_video.mp4' olarak kaydedildi.")
+    else:
+        print(f"Hata: Video indirilemedi. Durum kodu: {response.status_code}")
+        raise Exception("Indirme hatasi")
 
 if __name__ == "__main__":
     try:
-        video_olustur()
+        video_indir_ve_kaydet()
     except Exception as e:
         print(f"Kritik Hata: {str(e)}")
         raise e
