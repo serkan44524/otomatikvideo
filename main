@@ -1,0 +1,42 @@
+import os
+import requests
+from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
+
+def video_indir():
+    print("1. Arka plan videosu indiriliyor...")
+    # Test amaçlı, doğrudan indirilebilir dikey (9:16) telifsiz bir video linki
+    video_url = "https://mixkit.co"
+    
+    response = requests.get(video_url, stream=True)
+    with open("arka_plan.mp4", "wb") as f:
+        for chunk in response.iter_content(chunk_size=1024):
+            if chunk:
+                f.write(chunk)
+    print("Arka plan videosu başarıyla indirildi.")
+
+def video_olustur():
+    print("2. Video düzenleme işlemi başlıyor...")
+    # İndirdiğimiz videoyu yükleyelim ve ilk 5 saniyesini alalım
+    clip = VideoFileClip("arka_plan.mp4").subclip(0, 5)
+    
+    # Videonun üzerine yazılacak test metni
+    test_metni = "Bu bir GitHub Actions\nOtomasyon Testidir!\nİlk video başarıyla üretildi."
+    
+    # Yazı efektini ve rengini ayarlayalım
+    # Not: GitHub sunucularında varsayılan 'Liberation-Sans' veya 'Arial' fontları bulunur.
+    txt_clip = TextClip(test_metni, fontsize=40, color='white', font='Liberation-Sans', method='caption', size=(clip.w - 40, None))
+    
+    # Metni videonun tam ortasına yerleştirip, 5 saniye boyunca görünmesini sağlayalım
+    txt_clip = txt_clip.set_pos('center').set_duration(5)
+    
+    # Arka plan videosu ile metni birleştirelim
+    final_video = CompositeVideoClip([clip, txt_clip])
+    
+    # Videoyu render edelim (GitHub sunucusunun işlemcisini kullanır)
+    print("Video render ediliyor...")
+    final_video.write_videofile("cikti_video.mp4", fps=24, codec="libx264", audio_codec="aac")
+    print("Video başarıyla oluşturuldu: cikti_video.mp4")
+
+if __name__ == "__main__":
+    video_indir()
+    video_olustur()
