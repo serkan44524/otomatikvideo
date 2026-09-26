@@ -4,7 +4,6 @@ from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
 
 def video_indir():
     print("1. Arka plan videosu indiriliyor...")
-    # Test amaçlı, doğrudan indirilebilir dikey (9:16) telifsiz bir video linki
     video_url = "https://mixkit.co"
     
     response = requests.get(video_url, stream=True)
@@ -16,27 +15,40 @@ def video_indir():
 
 def video_olustur():
     print("2. Video düzenleme işlemi başlıyor...")
-    # İndirdiğimiz videoyu yükleyelim ve ilk 5 saniyesini alalım
+    if not os.path.exists("arka_plan.mp4"):
+        print("Hata: Arka plan videosu bulunamadı!")
+        return
+
     clip = VideoFileClip("arka_plan.mp4").subclip(0, 5)
     
-    # Videonun üzerine yazılacak test metni
-    test_metni = "Bu bir GitHub Actions\nOtomasyon Testidir!\nİlk video başarıyla üretildi."
+    test_metni = "GitHub Actions\nOtomasyon Testi\nBasariyla Calisti!"
     
-    # Yazı efektini ve rengini ayarlayalım
-    # Not: GitHub sunucularında varsayılan 'Liberation-Sans' veya 'Arial' fontları bulunur.
-    txt_clip = TextClip(test_metni, fontsize=40, color='white', font='Liberation-Sans', method='caption', size=(clip.w - 40, None))
+    # Font ismini Linux sunucularının doğrudan tanıdığı standart font yapıyoruz
+    txt_clip = TextClip(
+        test_metni, 
+        fontsize=50, 
+        color='white', 
+        font='DejaVu-Sans',  # Standart Linux fontu
+        method='caption', 
+        size=(clip.w - 40, None)
+    )
     
-    # Metni videonun tam ortasına yerleştirip, 5 saniye boyunca görünmesini sağlayalım
     txt_clip = txt_clip.set_pos('center').set_duration(5)
-    
-    # Arka plan videosu ile metni birleştirelim
     final_video = CompositeVideoClip([clip, txt_clip])
     
-    # Videoyu render edelim (GitHub sunucusunun işlemcisini kullanır)
     print("Video render ediliyor...")
-    final_video.write_videofile("cikti_video.mp4", fps=24, codec="libx264", audio_codec="aac")
-    print("Video başarıyla oluşturuldu: cikti_video.mp4")
+    final_video.write_videofile(
+        "cikti_video.mp4", 
+        fps=24, 
+        codec="libx264", 
+        audio_codec="aac"
+    )
+    print("Video basariyla olusturuldu: cikti_video.mp4")
 
 if __name__ == "__main__":
-    video_indir()
-    video_olustur()
+    try:
+        video_indir()
+        video_olustur()
+    except Exception as e:
+        print(f"Kritik Hata Meydana Geldi: {str(e)}")
+        raise e
