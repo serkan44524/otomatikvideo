@@ -1,54 +1,59 @@
 import os
-import requests
-from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
-
-def video_indir():
-    print("1. Arka plan videosu indiriliyor...")
-    video_url = "https://mixkit.co"
-    
-    response = requests.get(video_url, stream=True)
-    with open("arka_plan.mp4", "wb") as f:
-        for chunk in response.iter_content(chunk_size=1024):
-            if chunk:
-                f.write(chunk)
-    print("Arka plan videosu başarıyla indirildi.")
+import cv2
+import numpy as np
 
 def video_olustur():
-    print("2. Video düzenleme işlemi başlıyor...")
-    if not os.path.exists("arka_plan.mp4"):
-        print("Hata: Arka plan videosu bulunamadı!")
-        return
+    print("1. Saf Python ile dikey video olusturma basliyor...")
+    
+    # Video boyutları (TikTok uyumlu 9:16 dikey format)
+    width = 720
+    height = 1280
+    fps = 24
+    sure_saniye = 5
+    toplam_kare = fps * sure_saniye
+        
+    # Sunucuda en garanti calisan XVID codec bileşeni
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter('cikti_video.mp4', fourcc, fps, (width, height))
+    
+    # Ekrana yazilacak satirlar
+    satirlar = [
+        "GITHUB ACTIONS",
+        "OTOMASYON TESTI",
+        "YUZDE YUZ BASARILI"
+    ]
 
-    clip = VideoFileClip("arka_plan.mp4").subclip(0, 5)
-    
-    test_metni = "GitHub Actions\nOtomasyon Testi\nBasariyla Calisti!"
-    
-    # Font ismini Linux sunucularının doğrudan tanıdığı standart font yapıyoruz
-    txt_clip = TextClip(
-        test_metni, 
-        fontsize=50, 
-        color='white', 
-        font='DejaVu-Sans',  # Standart Linux fontu
-        method='caption', 
-        size=(clip.w - 40, None)
-    )
-    
-    txt_clip = txt_clip.set_pos('center').set_duration(5)
-    final_video = CompositeVideoClip([clip, txt_clip])
-    
-    print("Video render ediliyor...")
-    final_video.write_videofile(
-        "cikti_video.mp4", 
-        fps=24, 
-        codec="libx264", 
-        audio_codec="aac"
-    )
+    for kare_no in range(toplam_kare):
+        # Arka plan için boş bir matris oluştur (Koyu Lacivert/Mavi renk: R=20, G=30, B=50)
+        frame = np.zeros((height, width, 3), dtype=np.uint8)
+        frame[:] = [50, 30, 20] # OpenCV BGR formatı kullanır
+        
+        # Her karenin uzerine satirlari yaz
+        for i, metin in enumerate(satirlar):
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_olcegi = 1.5
+            kalinlik = 3
+            
+            # Metin boyutunu hesapla
+            (metin_w, metin_h), _ = cv2.getTextSize(metin, font, font_olcegi, kalinlik)
+            
+            # Ekranın ortasına hizala
+            x = int((width - metin_w) / 2)
+            y = int((height / 2) - (len(satirlar) * 60 / 2) + (i * 70))
+            
+            # Gölge efekti (Siyah)
+            cv2.putText(frame, metin, (x+2, y+2), font, font_olcegi, (0, 0, 0), kalinlik+1, cv2.LINE_AA)
+            # Ana yazı (Beyaz)
+            cv2.putText(frame, metin, (x, y), font, font_olcegi, (255, 255, 255), kalinlik, cv2.LINE_AA)
+            
+        out.write(frame)
+
+    out.release()
     print("Video basariyla olusturuldu: cikti_video.mp4")
 
 if __name__ == "__main__":
     try:
-        video_indir()
         video_olustur()
     except Exception as e:
-        print(f"Kritik Hata Meydana Geldi: {str(e)}")
+        print(f"Kritik Hata: {str(e)}")
         raise e
